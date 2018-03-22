@@ -169,7 +169,7 @@ func addReactionToMsg(callbackID string, userID int, chatID int64, msgID int,
 		go reactionRemoved(callbackID)
 
 		// Update DB
-		db.GetInstance().Delete(chosenReaction)
+		db.GetInstance().Delete(oldChosenReaction)
 	} else {
 		// Send chat action
 		go reactionSet(callbackID)
@@ -179,7 +179,7 @@ func addReactionToMsg(callbackID string, userID int, chatID int64, msgID int,
 
 		// Remove others from DB
 		for _, reaction := range otherReactions {
-			db.GetInstance().Delete(reaction)
+			db.GetInstance().Where("user_id = ? AND message_id = ?", userID, msgID).Delete(reaction)
 		}
 	}
 
@@ -192,7 +192,6 @@ func updateMessageReactionKeys(chatID int64, msgID int) {
 	db.GetInstance().Model(&models.LolReaction{}).Where("message_id = ?", msgID).Count(&lolCount)
 	db.GetInstance().Model(&models.FacepalmReaction{}).Where("message_id = ?", msgID).Count(&facepalmCount)
 
-	logrus.Errorln(msgID, ":", likeCount, lolCount, facepalmCount)
 	keyboard := keyboard.NewReactionInlineKeyboard(likeCount, lolCount, facepalmCount)
-	bot.Send(telegramAPI.NewEditMessageReplyMarkup(chatID, msgID, keyboard))
+	msg, err := bot.Send(telegramAPI.NewEditMessageReplyMarkup(chatID, msgID, keyboard))
 }

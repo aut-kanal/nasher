@@ -18,7 +18,7 @@ func NewReactionInlineKeyboard(likeCount, lolCount, facepalmCount int) telegramA
 
 	like := fmt.Sprintf(text.KeyboardEmojiLike, likeCount)
 	likeButton := telegramAPI.NewInlineKeyboardButtonData(like, KeyboardLikeButtonData)
-	lol := fmt.Sprintf(text.KeyboardEmojiLol, facepalmCount)
+	lol := fmt.Sprintf(text.KeyboardEmojiLol, lolCount)
 	lolButton := telegramAPI.NewInlineKeyboardButtonData(lol, KeyboardLolButtonData)
 	facepalm := fmt.Sprintf(text.KeyboardEmojiFacepalm, facepalmCount)
 	facepalmButton := telegramAPI.NewInlineKeyboardButtonData(facepalm, KeyboardFacepalmButtonData)
