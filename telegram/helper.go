@@ -193,5 +193,5 @@ func updateMessageReactionKeys(chatID int64, msgID int) {
 	db.GetInstance().Model(&models.FacepalmReaction{}).Where("message_id = ?", msgID).Count(&facepalmCount)
 
 	keyboard := keyboard.NewReactionInlineKeyboard(likeCount, lolCount, facepalmCount)
-	msg, err := bot.Send(telegramAPI.NewEditMessageReplyMarkup(chatID, msgID, keyboard))
+	bot.Send(telegramAPI.NewEditMessageReplyMarkup(chatID, msgID, keyboard))
 }
