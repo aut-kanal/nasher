@@ -37,9 +37,35 @@ func InitMessageQueue() {
 		logrus.WithError(err).Fatalln("can't create mq channel")
 	}
 
+	err = channel.ExchangeDeclare(
+		configuration.GetInstance().GetString("rabbit-mq.accept-ex-name"), // name
+		"fanout", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("can't declare accept exchange")
+	}
+
+	err = channel.ExchangeDeclare(
+		configuration.GetInstance().GetString("rabbit-mq.reject-ex-name"), // name
+		"fanout", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("can't declare reject exchange")
+	}
+
 	// Queue
 	qAccepts, err = channel.QueueDeclare(
-		configuration.GetInstance().GetString("rabbit-mq.accept-queue-name"), // name
+		"",    // name
 		false, // durable
 		false, // delete when unused
 		false, // exclusive
@@ -48,6 +74,17 @@ func InitMessageQueue() {
 	)
 	if err != nil {
 		logrus.WithError(err).Fatalln("can't create accepts queue")
+	}
+
+	err = channel.QueueBind(
+		qAccepts.Name, // queue name
+		"",            // routing key
+		configuration.GetInstance().GetString("rabbit-mq.accept-ex-name"), // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("can't bind queue to exchange")
 	}
 
 	// Consumer
