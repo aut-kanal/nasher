@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"gitlab.com/kanalbot/nasher/models"
+	telegramAPI "gopkg.in/telegram-bot-api.v4"
 )
 
 func sessionStartHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
@@ -27,10 +28,46 @@ func newAcceptedMessageHandler(msg amqp.Delivery) {
 }
 
 func likeHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
+	logrus.Debug("like handler")
+
+	messageID := update.(*telegramAPI.Update).CallbackQuery.Message.MessageID
+	callbackID := update.(*telegramAPI.Update).CallbackQuery.ID
+
+	likeReaction := &models.LikeReaction{
+		MessageID: messageID,
+		UserID:    userSession.UserID,
+	}
+
+	addReactionToMsg(callbackID, userSession.UserID, userSession.ChatID, messageID,
+		likeReaction, &models.LolReaction{}, &models.FacepalmReaction{})
 }
 
 func lolHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
+	logrus.Debug("lol handler")
+
+	messageID := update.(*telegramAPI.Update).CallbackQuery.Message.MessageID
+	callbackID := update.(*telegramAPI.Update).CallbackQuery.ID
+
+	lolReaction := &models.LolReaction{
+		MessageID: messageID,
+		UserID:    userSession.UserID,
+	}
+
+	addReactionToMsg(callbackID, userSession.UserID, userSession.ChatID, messageID,
+		lolReaction, &models.LikeReaction{}, &models.FacepalmReaction{})
 }
 
 func facepalmHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
+	logrus.Debug("facepalm handler")
+
+	messageID := update.(*telegramAPI.Update).CallbackQuery.Message.MessageID
+	callbackID := update.(*telegramAPI.Update).CallbackQuery.ID
+
+	facePalmReaction := &models.FacepalmReaction{
+		MessageID: messageID,
+		UserID:    userSession.UserID,
+	}
+
+	addReactionToMsg(callbackID, userSession.UserID, userSession.ChatID, messageID,
+		facePalmReaction, &models.LolReaction{}, &models.LikeReaction{})
 }

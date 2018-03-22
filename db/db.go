@@ -9,6 +9,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/kanalbot/nasher/configuration"
+	"gitlab.com/kanalbot/nasher/models"
 )
 
 var (
@@ -57,7 +58,15 @@ func initDB() error {
 		db, err = getSqliteDB(filePath)
 	}
 
+	autoMigrate()
+
 	return err
+}
+
+func autoMigrate() {
+	db.AutoMigrate(&models.LikeReaction{})
+	db.AutoMigrate(&models.LolReaction{})
+	db.AutoMigrate(&models.FacepalmReaction{})
 }
 
 // Close singleton DB instance
