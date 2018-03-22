@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/kanalbot/nasher/configuration"
@@ -44,7 +47,17 @@ func downloadFile(url string) ([]byte, error) {
 func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 	kanalUsername := configuration.GetInstance().GetString("kanal-username")
 
+	// Keyboard
 	inlineKeyboard := keyboard.NewReactionInlineKeyboard(0, 0, 0)
+
+	// Separate text and msgId
+	var text string
+	var id int
+	if len(msg.Text) > 0 {
+		text, id = separateTextAndMsgID(msg.Text)
+	} else {
+		text, id = separateTextAndMsgID(msg.Caption)
+	}
 
 	// Send messages with media attached
 	if msg.FileURL != "" {
@@ -72,8 +85,11 @@ func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 					UseExisting: false,
 				},
 			}
-			audio.Caption = msg.Caption
+			audio.Caption = text
 			audio.ReplyMarkup = inlineKeyboard
+			if id != 0 {
+				audio.ReplyToMessageID = id
+			}
 			return audio
 		}
 		if msg.Voice != nil {
@@ -85,8 +101,11 @@ func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 					UseExisting: false,
 				},
 			}
-			voice.Caption = msg.Caption
+			voice.Caption = text
 			voice.ReplyMarkup = inlineKeyboard
+			if id != 0 {
+				voice.ReplyToMessageID = id
+			}
 			return voice
 		}
 		if msg.Video != nil {
@@ -98,8 +117,11 @@ func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 					UseExisting: false,
 				},
 			}
-			video.Caption = msg.Caption
+			video.Caption = text
 			video.ReplyMarkup = inlineKeyboard
+			if id != 0 {
+				video.ReplyToMessageID = id
+			}
 			return video
 		}
 		if msg.Document != nil {
@@ -111,8 +133,11 @@ func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 					UseExisting: false,
 				},
 			}
-			document.Caption = msg.Caption
+			document.Caption = text
 			document.ReplyMarkup = inlineKeyboard
+			if id != 0 {
+				document.ReplyToMessageID = id
+			}
 			return document
 		}
 		if msg.Photo != nil {
@@ -124,15 +149,21 @@ func generateNasherMessage(msg *models.Message) telegramAPI.Chattable {
 					UseExisting: false,
 				},
 			}
-			photo.Caption = msg.Caption
+			photo.Caption = text
 			photo.ReplyMarkup = inlineKeyboard
+			if id != 0 {
+				photo.ReplyToMessageID = id
+			}
 			return photo
 		}
 	}
 
 	// Message without media
-	replyMsg := telegramAPI.NewMessageToChannel(kanalUsername, msg.Text)
+	replyMsg := telegramAPI.NewMessageToChannel(kanalUsername, text)
 	replyMsg.ReplyMarkup = inlineKeyboard
+	if id != 0 {
+		replyMsg.ReplyToMessageID = id
+	}
 	return replyMsg
 }
 
@@ -194,4 +225,23 @@ func updateMessageReactionKeys(chatID int64, msgID int) {
 
 	keyboard := keyboard.NewReactionInlineKeyboard(likeCount, lolCount, facepalmCount)
 	bot.Send(telegramAPI.NewEditMessageReplyMarkup(chatID, msgID, keyboard))
+}
+
+var (
+	messageLinkPattern *regexp.Regexp
+)
+
+func separateTextAndMsgID(message string) (string, int) {
+	if messageLinkPattern == nil {
+		urlRegex := fmt.Sprintf(`https:\/\/t\.me\/%s\/(?P<ID>\d+)`,
+			configuration.GetInstance().GetString("kanal-username")[1:])
+		messageLinkPattern = regexp.MustCompile(urlRegex)
+	}
+
+	id := -1
+	if submatches := messageLinkPattern.FindStringSubmatch(message); len(submatches) > 0 {
+		id, _ = strconv.Atoi(submatches[1])
+		message = messageLinkPattern.ReplaceAllString(message, "")
+	}
+	return message, id
 }
