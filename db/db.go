@@ -67,6 +67,8 @@ func autoMigrate() {
 	db.AutoMigrate(&models.LikeReaction{})
 	db.AutoMigrate(&models.LolReaction{})
 	db.AutoMigrate(&models.FacepalmReaction{})
+
+	db.AutoMigrate(&models.User{})
 }
 
 // Close singleton DB instance

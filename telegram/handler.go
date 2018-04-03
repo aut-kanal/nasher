@@ -10,6 +10,8 @@ import (
 
 func sessionStartHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
 	logrus.WithField("user", *userSession).Debugf("new session started")
+
+	updateUserInfo(userSession)
 }
 
 func unknownMessageHandler(userSession *miyanbor.UserSession, matches []string, update interface{}) {
